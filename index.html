@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suivi des cours · Class Tracker</title>
+<style>
+:root{--tx:#0b2a4a;--ac:#1e88e5;--ok:#2e9e4f;--bad:#e53935;--wa:#ff9800}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--tx);background:linear-gradient(#1e7bf0,#68b8ff 45%,#c6e8ff);background-attachment:fixed;padding-bottom:130px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px var(--ac)}
+/* sky & grass */
+.sky{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.sun{position:absolute;top:-90px;right:-60px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,#fffbe0 0,#fff3a0 25%,rgba(255,240,150,.35) 50%,transparent 70%)}
+.cl{position:absolute;left:0;background:#fff;border-radius:100px;opacity:.92;filter:blur(.8px);animation:drift linear infinite}
+.cl::before,.cl::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cl::before{width:45%;height:170%;left:14%;top:-80%}
+.cl::after{width:36%;height:135%;right:14%;top:-55%}
+@keyframes drift{from{transform:translateX(-340px)}to{transform:translateX(110vw)}}
+.grass{position:fixed;left:-5%;right:-5%;bottom:0;height:110px;z-index:-1;pointer-events:none;background:repeating-linear-gradient(100deg,rgba(255,255,255,.1) 0 5px,transparent 5px 13px),linear-gradient(#72e24d,#35a025 55%,#1f7a18);border-radius:50% 50% 0 0/40px 40px 0 0;box-shadow:inset 0 6px 14px rgba(255,255,255,.35)}
+/* glass */
+.glass{position:relative;overflow:hidden;background:rgba(255,255,255,.5);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border:1.5px solid rgba(255,255,255,.8);border-radius:22px;box-shadow:0 10px 30px rgba(8,55,120,.22),inset 0 1px 0 #fff}
+.glass::before{content:"";position:absolute;inset:0 0 58% 0;background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,0));pointer-events:none}
+.glass>*{position:relative}
+.wrap{max-width:1040px;margin:0 auto;padding:14px 14px 0;display:grid;gap:14px}
+/* header */
+.hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 16px}
+.clock{display:flex;flex-direction:column;line-height:1.1}
+.clock b{font-size:clamp(1.5rem,4vw,2.1rem);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.clock small{opacity:.75;text-transform:capitalize}
+.globe{width:58px;height:58px;border-radius:50%;position:relative;overflow:hidden;animation:bob 4s ease-in-out infinite;background:radial-gradient(circle at 35% 30%,#8fd8ff,#1769c9 60%,#0a3b86);box-shadow:inset -9px -7px 15px rgba(0,20,70,.55),0 0 16px rgba(130,205,255,.9)}
+.globe i{position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='116' height='58'%3E%3Cg fill='%2358b947'%3E%3Cpath d='M10 14q12-9 25-2t6 15-15 6-16-8z'/%3E%3Cpath d='M56 30q10-7 19 0t4 15-15 8-12-11z'/%3E%3Cpath d='M84 9q13-6 23 2t-4 11-19 2z'/%3E%3Cellipse cx='36' cy='49' rx='15' ry='5'/%3E%3C/g%3E%3C/svg%3E") repeat-x;background-size:116px 58px;animation:spin 9s linear infinite}
+.globe::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.75),transparent 35%)}
+@keyframes spin{to{background-position:-116px 0}}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.ctl{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.btn{border:1.5px solid rgba(255,255,255,.9);border-radius:14px;padding:8px 13px;background:linear-gradient(rgba(255,255,255,.85),rgba(255,255,255,.35));box-shadow:0 3px 8px rgba(8,55,120,.18),inset 0 1px 0 #fff;font-weight:600;transition:transform .12s}
+.btn:active{transform:scale(.96)}
+.btn.pri{background:linear-gradient(#58b0ff,#1e7be0);color:#fff;border-color:#bfe0ff;text-shadow:0 1px 2px rgba(0,40,100,.4)}
+.lang b{opacity:.45;padding:0 2px}.lang b.on{opacity:1;text-decoration:underline}
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 2px}
+.tg{display:inline-flex;align-items:center;gap:4px}
+.mini{border:1.5px solid #fff;background:rgba(255,255,255,.8);border-radius:50%;width:30px;height:30px;box-shadow:0 2px 6px rgba(8,55,120,.2)}
+.tab.add{border-style:dashed;color:#0c5bb5;background:rgba(255,255,255,.3)}
+.qa{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.qa input{flex:1 1 150px;width:auto;min-width:0}
+.err{background:#ffe3e0;color:#a31515;border:1.5px solid #f5a8a2;border-radius:12px;padding:8px 12px;margin-top:10px;font-weight:700}
+.tab{flex:0 0 auto;border:1.5px solid rgba(255,255,255,.85);border-radius:16px;padding:9px 16px;font-weight:700;background:rgba(255,255,255,.4);backdrop-filter:blur(8px)}
+.tab.on{background:linear-gradient(#fff,#d9efff);box-shadow:0 4px 12px rgba(8,55,120,.25);color:#0c5bb5}
+.tabs.sys .tab{font-size:1.05rem;padding:11px 20px}
+.sec{padding:14px 16px}
+h2,h3{margin:0}
+h2{font-size:1.15rem}
+.hl{border-color:#ffe27a;box-shadow:0 0 0 3px rgba(255,226,122,.65),0 10px 30px rgba(8,55,120,.22),inset 0 1px 0 #fff}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.muted{opacity:.75;font-size:.88rem}
+.empty{padding:14px;text-align:center;opacity:.8}
+/* students */
+.gc{margin-top:12px;padding:12px}
+.gh{margin-bottom:8px}
+.st{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:9px 10px;margin-top:8px;border-radius:14px;background:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.8)}
+.st.due{background:linear-gradient(rgba(255,236,190,.95),rgba(255,205,120,.75));border-color:#ffb340;box-shadow:0 0 14px rgba(255,160,30,.55)}
+.who{flex:1 1 150px;display:flex;flex-direction:column;min-width:0}
+.nm{background:none;border:0;padding:0;text-align:left;font-weight:700;font-size:1rem;text-decoration:underline dotted;overflow-wrap:anywhere}
+.who small{opacity:.7}
+.cnt{display:flex;align-items:center;gap:6px}
+.dots{display:flex;gap:3px}
+.dots i{width:11px;height:11px;border-radius:50%;background:rgba(11,42,74,.18);border:1px solid rgba(11,42,74,.25)}
+.dots i.on{background:linear-gradient(#7de06a,#2e9e4f);border-color:#1f7a18}
+.badge{padding:4px 11px;border-radius:99px;font-weight:800;font-size:.82rem;color:#fff;background:linear-gradient(#ffb74d,#f57c00);border:1.5px solid #ffe0b0;box-shadow:0 2px 8px rgba(245,124,0,.6),inset 0 1px 0 rgba(255,255,255,.8);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 16px rgba(255,140,0,.95),inset 0 1px 0 rgba(255,255,255,.8)}}
+.mk{display:flex;gap:6px}
+.mk button{border-radius:12px;padding:7px 11px;font-weight:700;border:1.5px solid rgba(255,255,255,.9);background:rgba(255,255,255,.6)}
+.mk .pa.on{background:linear-gradient(#6fdc58,#2e9e4f);color:#fff}
+.mk .ab.on{background:linear-gradient(#ff7a73,#d32f2f);color:#fff}
+.pay{background:linear-gradient(#7de06a,#2e9e4f);color:#fff;border-color:#c8f5bd;text-shadow:0 1px 2px rgba(0,60,0,.4)}
+.ico{display:flex;gap:4px}
+.ico button{border:0;background:rgba(255,255,255,.6);border-radius:10px;width:34px;height:34px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips span{background:rgba(255,255,255,.7);border-radius:99px;padding:3px 10px;font-size:.85rem}
+/* modal */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(10,50,100,.35);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
+.md{width:min(560px,100%);max-height:92vh;overflow:auto;padding:20px;background:rgba(255,255,255,.72);animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.94);opacity:0}}
+.md h2{margin-bottom:12px}
+.md h2{padding-right:44px}
+.x{position:absolute!important;z-index:5;cursor:pointer;top:10px;right:12px;border:0;background:rgba(255,255,255,.7);border-radius:50%;width:34px;height:34px;font-size:1rem}
+label{display:block;font-weight:700;margin:10px 0 4px}
+input[type=text],input[type=tel],input[type=date],input[type=number]{width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.95);background:rgba(255,255,255,.8);box-shadow:inset 0 2px 4px rgba(8,55,120,.12)}
+.dys{display:flex;flex-wrap:wrap;gap:6px}
+.dys label{margin:0;font-weight:600;display:flex;gap:5px;align-items:center;background:rgba(255,255,255,.7);padding:6px 10px;border-radius:12px}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;position:sticky;bottom:-20px;z-index:4;padding:12px 0 2px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.92) 35%)}
+.pr{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center}
+.pr label{margin:0}
+ol.g{padding-left:20px;margin:0}ol.g li{margin-bottom:12px}
+.stat{display:flex;gap:10px;flex-wrap:wrap}
+.stat div{flex:1 1 110px;background:rgba(255,255,255,.7);border-radius:14px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.5rem}
+ul.l{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:5px}
+ul.l li{background:rgba(255,255,255,.6);padding:7px 11px;border-radius:11px;display:flex;justify-content:space-between;gap:8px}
+@media(max-width:700px){.hd{grid-template-columns:1fr auto}.ctl{grid-column:1/-1;justify-content:flex-start}.mk{flex:1 1 100%}.mk button{flex:1}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true">
+<div class="sun"></div>
+<div class="cl" style="top:8%;width:190px;height:44px;animation-duration:90s;animation-delay:-20s"></div>
+<div class="cl" style="top:22%;width:140px;height:34px;animation-duration:120s;animation-delay:-70s"></div>
+<div class="cl" style="top:40%;width:230px;height:52px;animation-duration:150s;animation-delay:-100s"></div>
+<div class="cl" style="top:58%;width:160px;height:38px;animation-duration:105s;animation-delay:-40s"></div>
+<div class="cl" style="top:72%;width:120px;height:30px;animation-duration:130s;animation-delay:-10s"></div>
+</div>
+<div class="grass" aria-hidden="true"></div>
+<div id="app" class="wrap"></div>
+<div id="modal"></div>
+
+<script>
+(function(){
+"use strict";
+var KEY="classTracker.v2",OLD="classTracker.v1";
+var DAYS={fr:["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],en:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]};
+var ORDER=[1,2,3,4,5,6,0];
+var T={
+fr:{guide:"Guide d'utilisation",prices:"Tarifs",quick:"Pointage rapide · Aujourd'hui",noToday:"Aucun groupe prévu aujourd'hui. Ajoutez des jours de cours à vos groupes.",date:"Date de la séance",todayBtn:"Aujourd'hui",newGroup:"+ Nouveau groupe",editGroup:"Modifier le groupe",groupName:"Nom du groupe (ex. Groupe A - Physique)",days:"Jours de cours",noGroups:"Aucun groupe dans ce niveau. Créez-en un pour commencer.",noSt:"Aucun élève dans ce groupe. Ajoutez-en un ci-dessous.",editSt:"Modifier l'élève",name:"Nom complet",phone:"Téléphone",enroll:"Date d'inscription",save:"Enregistrer",cancel:"Annuler",present:"Présent",absent:"Absent",markPaid:"Marquer payé",due:"Paiement Dû",total:"Séances suivies",cycle:"Cycle en cours",paidTotal:"Total payé",attDates:"Dates de présence",payHist:"Paiements",noAtt:"Aucune présence enregistrée.",noPay:"Aucun paiement enregistré.",pricesTitle:"Tarifs par bloc de 4 séances",pricesHint:"Le montant dû dépend du niveau du groupe de l'élève.",del:"Supprimer",edit:"Modifier",confirmG:"Supprimer ce groupe et tous ses élèves ?",confirmS:"Supprimer cet élève et son historique ?",sessions:"4 séances",guideTitle:"Guide d'utilisation",
+addSys:"+ Catégorie / Système",addLvl:"+ Niveau",newSys:"Nouvelle catégorie / système",renSys:"Renommer la catégorie",sysName:"Nom (ex. Université / Institut)",newLvl:"Nouveau niveau",renLvl:"Modifier le niveau",lvlName:"Nom du niveau (ex. 6ème, Seconde, Terminale)",lvlPrice:"Prix par bloc de 4 séances (TND)",dup:"Ce nom existe déjà.",needName:"Veuillez saisir un nom.",noLevels:"Aucun niveau dans cette catégorie. Cliquez « + Niveau » pour en ajouter.",confirmSys:"Supprimer cette catégorie avec ses niveaux, groupes et élèves ?",confirmLvl:"Supprimer ce niveau avec ses groupes et élèves ?",qName:"Nom de l'élève",addBtn:"+ Ajouter l'élève",storeErr:"Sauvegarde impossible : le stockage du navigateur est bloqué.",
+g:[["Catégories et niveaux","Les onglets du haut sont vos catégories (Système Français, Système National…). Cliquez « + Catégorie / Système » pour en créer une (ex. Université). Dessous, ajoutez vos niveaux avec « + Niveau » (6ème, Seconde, Terminale…). Utilisez ✎ et 🗑 à côté de l'onglet actif pour renommer ou supprimer."],["Créer un groupe","Choisissez un niveau, cliquez « + Nouveau groupe », donnez un nom et cochez les jours de cours. Le groupe apparaît dans « Pointage rapide » ces jours-là."],["Ajouter des élèves","Dans la carte du groupe, tapez le nom (et le téléphone) puis appuyez sur Entrée ou « + Ajouter l'élève ». Cliquez sur un nom pour voir son historique, ✎ pour le modifier."],["Marquer la présence","Choisissez la date (ou « Aujourd'hui ») puis Présent ou Absent. Un second clic annule. Chaque présence est enregistrée dans l'historique."],["Paiements par 4 séances","Chaque présence ajoute 1 au compteur (0/4 à 4/4). À 4/4, la ligne devient orange avec « Paiement Dû ». « Marquer payé » enregistre le paiement daté et remet le compteur à 0/4."],["Tarifs","Cliquez « Tarifs » pour fixer le prix d'un bloc de 4 séances par niveau (ex. 9ème = 60 TND, Bac = 100 TND). Vous pouvez aussi le fixer en créant le niveau."],["Données","Tout est sauvegardé automatiquement dans ce navigateur. Utilisez toujours le même navigateur."]]},
+en:{guide:"User guide",prices:"Pricing",quick:"Quick mark · Today",noToday:"No groups scheduled today. Add class days to your groups.",date:"Session date",todayBtn:"Today",newGroup:"+ New group",editGroup:"Edit group",groupName:"Group name (e.g. Group A - Physics)",days:"Class days",noGroups:"No groups in this level yet. Create one to get started.",noSt:"No students in this group. Add one below.",editSt:"Edit student",name:"Full name",phone:"Phone",enroll:"Enrollment date",save:"Save",cancel:"Cancel",present:"Present",absent:"Absent",markPaid:"Mark Paid",due:"Payment Due",total:"Sessions attended",cycle:"Current cycle",paidTotal:"Total paid",attDates:"Attendance dates",payHist:"Payments",noAtt:"No attendance recorded.",noPay:"No payments recorded.",pricesTitle:"Price per 4-session block",pricesHint:"The amount due depends on the level of the student's group.",del:"Delete",edit:"Edit",confirmG:"Delete this group and all its students?",confirmS:"Delete this student and their history?",sessions:"4 sessions",guideTitle:"User guide",
+addSys:"+ Category / System",addLvl:"+ Grade level",newSys:"New category / system",renSys:"Rename category",sysName:"Name (e.g. University / Institute)",newLvl:"New grade level",renLvl:"Edit grade level",lvlName:"Grade name (e.g. 6th, Seconde, Terminale)",lvlPrice:"Price per 4-session block (TND)",dup:"This name already exists.",needName:"Please enter a name.",noLevels:"No grade levels in this category. Click “+ Grade level” to add one.",confirmSys:"Delete this category with its levels, groups and students?",confirmLvl:"Delete this level with its groups and students?",qName:"Student name",addBtn:"+ Add student",storeErr:"Cannot save: browser storage is blocked.",
+g:[["Categories and levels","The top tabs are your categories (French System, National System…). Click “+ Category / System” to create one (e.g. University). Below, add grade levels with “+ Grade level” (6th, Seconde, Terminale…). Use ✎ and 🗑 next to the active tab to rename or delete."],["Create a group","Pick a level, click “+ New group”, name it and tick the class days. It shows up in “Quick mark” on those days."],["Add students","In the group card, type the name (and phone) then press Enter or “+ Add student”. Click a name to see their history, ✎ to edit."],["Mark attendance","Pick the date (or “Today”), then Present or Absent. Tapping again clears it. Each presence is logged in the history."],["4-session payments","Each presence adds 1 to the counter (0/4 to 4/4). At 4/4 the row turns orange with “Payment Due”. “Mark Paid” logs the dated payment and resets the counter to 0/4."],["Pricing","Click “Pricing” to set the price of a 4-session block per level (e.g. 9th = 60 TND, Bac = 100 TND). You can also set it when creating the level."],["Data","Everything is saved automatically in this browser. Always use the same browser."]]}
+};
+function lv(ids,prices){return ids.map(function(n,i){return{n:n,p:prices[i]}})}
+var storeFail=false;
+function defaults(){
+var f=["6ème","5ème","4ème","3ème","Seconde","Première","Terminale"],fp=[40,45,50,60,70,80,100];
+var n=["7ème","8ème","9ème","1ère année","2ème année","3ème année","Bac"],np=[40,45,60,70,80,90,100],pr={};
+function mk(sid,names,ps){return names.map(function(x,i){pr[sid+"-"+i]=ps[i];return{id:sid+"-"+i,name:x}})}
+return{lang:"fr",sys:"fr",lv:"fr-0",prices:pr,groups:[],students:[],att:{},systems:[
+{id:"fr",flag:"🇫🇷",name:{fr:"Système Français",en:"French System"},levels:mk("fr",f,fp)},
+{id:"tn",flag:"🇹🇳",name:{fr:"Système National (Tunisien)",en:"National System (Tunisian)"},levels:mk("tn",n,np)}]}}
+function migrate(){var o=JSON.parse(localStorage.getItem(OLD));if(!o)return null;
+var b=defaults(),keys=["7","8","9","1","2","3","bac"],nm={7:"7ème",8:"8ème",9:"9ème",1:"1ère année",2:"2ème année",3:"3ème année",bac:"Baccalauréat (Bac)"};
+b.lang=o.lang==="en"?"en":"fr";b.students=o.students||[];b.att=o.att||{};
+(o.groups||[]).forEach(function(g){var id;
+if(g.sys==="tn")id="tn-"+keys.indexOf(String(g.lv));
+else{id="frm-"+g.lv;if(!b.systems[0].levels.some(function(l){return l.id===id})){b.systems[0].levels.push({id:id,name:nm[g.lv]||String(g.lv)});b.prices[id]=+(o.prices||{})[g.lv]||0}}
+b.groups.push({id:g.id,name:g.name,days:g.days||[],sys:g.sys==="tn"?"tn":"fr",lv:id})});
+return b}
+function load(){var b=null;
+try{var r=localStorage.getItem(KEY);b=r?JSON.parse(r):migrate()}catch(e){b=null}
+if(!b||!Array.isArray(b.systems)||!b.systems.length)b=defaults();
+b.groups=b.groups||[];b.students=b.students||[];b.att=b.att||{};b.prices=b.prices||{};
+if(b.lang!=="fr"&&b.lang!=="en")b.lang="fr";return b}
+var S=load(),M=null,FOCUS=null,DATE=iso(new Date()),lastDay=DATE;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));storeFail=false}catch(e){storeFail=true}}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function t(k){return T[S.lang][k]||k}
+function loc(){return S.lang==="fr"?"fr-FR":"en-GB"}
+function fmt(d){try{return new Date(d+"T00:00:00").toLocaleDateString(loc(),{day:"2-digit",month:"short",year:"numeric"})}catch(e){return d}}
+function $(s){return document.querySelector(s)}
+function stu(id){return S.students.filter(function(s){return s.id===id})[0]}
+function grp(id){return S.groups.filter(function(g){return g.id===id})[0]}
+function sys(id){return S.systems.filter(function(s){return s.id===id})[0]}
+function sname(s){return typeof s.name==="string"?s.name:(s.name[S.lang]||s.name.fr)}
+function level(id){for(var i=0;i<S.systems.length;i++){var l=S.systems[i].levels.filter(function(x){return x.id===id})[0];if(l)return l}}
+function ctx(g){var s=sys(g.sys),l=level(g.lv);return(s?sname(s):"?")+" · "+(l?l.name:"?")}
+function att(s){return Object.keys(S.att).filter(function(d){return S.att[d][s.id]==="P"}).sort()}
+function unpaid(s){return Math.max(0,att(s).length-(s.paid||0))}
+function price(id){return Math.max(0,+S.prices[id]||0)}
+function daysTxt(g){var d=g.days||[];return d.length?ORDER.filter(function(x){return d.indexOf(x)>-1}).map(function(x){return DAYS[S.lang][x]}).join(", "):"—"}
+function fixSel(){var s=sys(S.sys)||S.systems[0];S.sys=s.id;if(!s.levels.some(function(l){return l.id===S.lv}))S.lv=s.levels.length?s.levels[0].id:""}
+
+function stRow(s,g,d,compact){
+var u=unpaid(s),due=u>=4,st=(S.att[d]||{})[s.id],n=Math.min(u,4),dots="";
+for(var i=0;i<4;i++)dots+='<i class="'+(i<n?"on":"")+'"></i>';
+return '<div class="st'+(due?" due":"")+'"><div class="who"><button class="nm" data-act="hist" data-id="'+s.id+'">'+esc(s.name)+'</button>'+(compact?"":'<small>'+esc(s.phone||"")+'</small>')+'</div>'
++'<div class="cnt" title="'+t("cycle")+'"><span class="dots">'+dots+'</span><b>'+n+'/4</b>'+(u>4?'<small>+'+(u-4)+'</small>':"")+'</div>'
++(due?'<span class="badge">⚠ '+t("due")+'</span>':"")
++'<div class="mk"><button class="pa'+(st==="P"?" on":"")+'" data-act="mark" data-id="'+s.id+'" data-d="'+d+'" data-v="P">✓ '+t("present")+'</button><button class="ab'+(st==="A"?" on":"")+'" data-act="mark" data-id="'+s.id+'" data-d="'+d+'" data-v="A">✗ '+t("absent")+'</button></div>'
++(due?'<button class="btn pay" data-act="pay" data-id="'+s.id+'">'+price(g.lv)+' TND · '+t("markPaid")+'</button>':"")
++(compact?"":'<span class="ico"><button data-act="editSt" data-id="'+s.id+'" title="'+t("edit")+'" aria-label="'+t("edit")+'">✎</button><button data-act="delSt" data-id="'+s.id+'" title="'+t("del")+'" aria-label="'+t("del")+'">🗑</button></span>')
++'</div>'}
+
+function tabs(items,cur,act,ren,del,canDel,addAct,addTxt){
+return items.map(function(x){var on=x.id===cur;
+return '<span class="tg"><button class="tab'+(on?" on":"")+'" data-act="'+act+'" data-id="'+x.id+'">'+esc(x.label)+'</button>'
++(on?'<button class="mini" data-act="'+ren+'" aria-label="'+t("edit")+'">✎</button>'+(canDel?'<button class="mini" data-act="'+del+'" aria-label="'+t("del")+'">🗑</button>':""):"")+'</span>'}).join("")
++'<button class="tab add" data-act="'+addAct+'">'+addTxt+'</button>'}
+
+function render(){
+fixSel();
+var fr=S.lang==="fr",today=iso(new Date()),wd=new Date().getDay(),cs=sys(S.sys);
+document.documentElement.lang=S.lang;
+var tg=S.groups.filter(function(g){return(g.days||[]).indexOf(wd)>-1});
+var quick=tg.length?tg.map(function(g){var ss=S.students.filter(function(s){return s.gid===g.id});
+return '<div class="gc glass"><div class="gh"><h3>'+esc(g.name)+'</h3><span class="muted">'+esc(ctx(g))+'</span></div>'+(ss.length?ss.map(function(s){return stRow(s,g,today,true)}).join(""):'<div class="empty">'+t("noSt")+'</div>')+'</div>'}).join(""):'<div class="empty">'+t("noToday")+'</div>';
+var gs=S.groups.filter(function(g){return g.sys===S.sys&&g.lv===S.lv});
+var cards=gs.length?gs.map(function(g){var ss=S.students.filter(function(s){return s.gid===g.id});
+return '<div class="gc glass"><div class="row gh"><div><h3>'+esc(g.name)+'</h3><span class="muted">'+daysTxt(g)+' · '+ss.length+'</span></div><div class="ctl"><button class="btn" data-act="editGroup" data-id="'+g.id+'" aria-label="'+t("editGroup")+'">✎</button><button class="btn" data-act="delGroup" data-id="'+g.id+'" aria-label="'+t("del")+'">🗑</button></div></div>'
++(ss.length?ss.map(function(s){return stRow(s,g,DATE,false)}).join(""):'<div class="empty">'+t("noSt")+'</div>')
++'<div class="qa" data-form="quick" data-gid="'+g.id+'"><input id="q-'+g.id+'" name="qn" type="text" required maxlength="80" placeholder="'+t("qName")+'" aria-label="'+t("qName")+'"><input name="qp" type="tel" maxlength="30" placeholder="'+t("phone")+'" aria-label="'+t("phone")+'"><button class="btn pri" type="button" data-act="quick">'+t("addBtn")+'</button></div></div>'}).join(""):'<div class="empty glass">'+(S.lv?t("noGroups"):t("noLevels"))+'</div>';
+var sysTabs=tabs(S.systems.map(function(s){return{id:s.id,label:(s.flag||"🏫")+" "+sname(s)}}),S.sys,"sys","renSys","delSys",S.systems.length>1,"addSys",t("addSys"));
+var lvTabs=tabs(cs.levels.map(function(l){return{id:l.id,label:l.name}}),S.lv,"lv","renLvl","delLvl",true,"addLvl",t("addLvl"));
+$("#app").innerHTML=
+(storeFail?'<div class="err">'+t("storeErr")+'</div>':"")
++'<header class="glass hd"><div class="clock"><b id="clk">--:--:--</b><small id="cdt"></small></div><div class="globe" aria-hidden="true"><i></i></div>'
++'<div class="ctl"><button class="btn lang" data-act="lang" title="Français / English"><b class="'+(fr?"on":"")+'">FR</b>|<b class="'+(fr?"":"on")+'">EN</b></button><button class="btn" data-act="guide">? '+t("guide")+'</button><button class="btn" data-act="prices">💶 '+t("prices")+'</button></div></header>'
++'<section class="glass sec hl"><div class="row"><h2>⚡ '+t("quick")+'</h2><span class="muted">'+fmt(today)+'</span></div>'+quick+'</section>'
++'<div class="tabs sys">'+sysTabs+'</div><div class="tabs">'+lvTabs+'</div>'
++'<section class="glass sec"><div class="row"><div class="row" style="justify-content:flex-start"><label for="dt" style="margin:0">'+t("date")+'</label><input type="date" id="dt" value="'+DATE+'" style="width:auto"><button class="btn" data-act="todayBtn">'+t("todayBtn")+'</button></div>'+(S.lv?'<button class="btn pri" data-act="newGroup">'+t("newGroup")+'</button>':"")+'</div>'+cards+'</section>';
+renderModal();tick();
+if(FOCUS){var q=$("#q-"+FOCUS);if(q)q.focus();FOCUS=null}}
+
+function field(l,n,v,type,extra){return '<label for="'+n+'">'+l+'</label><input id="'+n+'" name="'+n+'" type="'+(type||"text")+'" value="'+esc(v)+'" '+(extra||"")+'>'}
+function formEnd(){return (M.err?'<div class="err">'+esc(M.err)+'</div>':"")+'<div class="acts"><button type="button" class="btn" data-act="close">'+t("cancel")+'</button><button class="btn pri" type="button" data-act="save">'+t("save")+'</button></div>'}
+function renderModal(){
+var el=$("#modal");if(!M){el.innerHTML="";return}
+var h="",s,g;
+if(M.type==="group"){g=M.id?grp(M.id):{name:"",days:[]};
+h='<h2>'+(M.id?t("editGroup"):t("newGroup").replace("+ ",""))+'</h2><div data-form="group">'+field(t("groupName"),"gn",g.name,"text","required maxlength=60")
++'<label>'+t("days")+'</label><div class="dys">'+ORDER.map(function(d){return '<label><input type="checkbox" name="dy" value="'+d+'"'+((g.days||[]).indexOf(d)>-1?" checked":"")+'>'+DAYS[S.lang][d]+'</label>'}).join("")+'</div>'+formEnd()+'</div>'}
+else if(M.type==="student"){s=stu(M.id)||{};
+h='<h2>'+t("editSt")+'</h2><div data-form="student">'+field(t("name"),"sn",s.name,"text","required maxlength=80")+field(t("phone"),"sp",s.phone,"tel","maxlength=30")+field(t("enroll"),"se",s.enroll,"date")+formEnd()+'</div>'}
+else if(M.type==="sys"){var x=M.id?sys(M.id):null;
+h='<h2>'+(x?t("renSys"):t("newSys"))+'</h2><div data-form="sys">'+field(t("sysName"),"xn",x?sname(x):"","text","required maxlength=60")+formEnd()+'</div>'}
+else if(M.type==="lvl"){var l=M.id?level(M.id):null;
+h='<h2>'+(l?t("renLvl"):t("newLvl"))+'</h2><div data-form="lvl">'+field(t("lvlName"),"ln",l?l.name:"","text","required maxlength=40")+field(t("lvlPrice"),"lp",l?price(l.id):"","number","min=0 step=1 placeholder=0")+formEnd()+'</div>'}
+else if(M.type==="prices"){h='<h2>💶 '+t("pricesTitle")+'</h2><p class="muted">'+t("pricesHint")+'</p><div data-form="prices">'+S.systems.map(function(sy){return '<h3 class="muted" style="margin-top:12px">'+esc(sname(sy))+'</h3>'+sy.levels.map(function(l){return '<div class="pr"><label for="p_'+l.id+'">'+esc(l.name)+'</label><input id="p_'+l.id+'" name="p_'+l.id+'" type="number" min="0" step="1" value="'+price(l.id)+'"></div>'}).join("")}).join("")+formEnd()+'</div><p class="muted">TND / '+t("sessions")+'</p>'}
+else if(M.type==="guide"){h='<h2>? '+t("guideTitle")+'</h2><ol class="g">'+T[S.lang].g.map(function(x){return '<li><b>'+x[0]+'</b><br>'+x[1]+'</li>'}).join("")+'</ol>'}
+else if(M.type==="confirm"){h='<h2>⚠ '+t("del")+'</h2><p>'+esc(M.msg)+'</p><div class="acts"><button type="button" class="btn" data-act="close">'+t("cancel")+'</button><button type="button" class="btn pri" data-act="doConfirm" style="background:linear-gradient(#ff7a73,#d32f2f)">'+t("del")+'</button></div>'}
+else if(M.type==="hist"){s=stu(M.id);if(!s){M=null;el.innerHTML="";return}var a=att(s).reverse(),p=(s.pays||[]).slice().reverse(),tp=p.reduce(function(q,y){return q+y.amount},0);
+h='<h2>'+esc(s.name)+'</h2><div class="muted">'+esc(s.phone||"—")+' · '+t("enroll")+': '+fmt(s.enroll||"")+'</div><div class="stat" style="margin-top:12px"><div><b>'+a.length+'</b>'+t("total")+'</div><div><b>'+Math.min(unpaid(s),4)+'/4</b>'+t("cycle")+'</div><div><b>'+tp+'</b>'+t("paidTotal")+' (TND)</div></div>'
++'<label>'+t("attDates")+'</label>'+(a.length?'<div class="chips">'+a.map(function(d){return '<span>'+fmt(d)+'</span>'}).join("")+'</div>':'<div class="muted">'+t("noAtt")+'</div>')
++'<label>'+t("payHist")+'</label>'+(p.length?'<ul class="l">'+p.map(function(y){return '<li><span>🧾 '+fmt(y.date)+'</span><b>'+y.amount+' TND · '+t("sessions")+'</b></li>'}).join("")+'</ul>':'<div class="muted">'+t("noPay")+'</div>')}
+el.innerHTML='<div class="ov" data-act="ov"><div class="glass md" role="dialog" aria-modal="true"><button class="x" data-act="close" aria-label="Close">✕</button>'+h+'</div></div>';
+if(!M.err||M.type!=="prices"){var f=el.querySelector("input[type=text]");if(f)f.focus()}}
+
+function mark(id,d,v){var s=stu(id);if(!s)return;S.att[d]=S.att[d]||{};
+if(S.att[d][id]===v)delete S.att[d][id];else S.att[d][id]=v;
+if(!Object.keys(S.att[d]).length)delete S.att[d];
+s.paid=Math.min(s.paid||0,att(s).length);save();render()}
+function pay(id){var s=stu(id),g=s&&grp(s.gid);if(!g||unpaid(s)<4)return;
+s.pays=s.pays||[];s.pays.push({date:iso(new Date()),amount:price(g.lv),sessions:4});s.paid=(s.paid||0)+4;save();render()}
+function delStudent(id){S.students=S.students.filter(function(s){return s.id!==id});for(var d in S.att){delete S.att[d][id];if(!Object.keys(S.att[d]).length)delete S.att[d]}}
+function delGroup(id){S.students.filter(function(s){return s.gid===id}).forEach(function(s){delStudent(s.id)});S.groups=S.groups.filter(function(g){return g.id!==id})}
+function delLevel(id){S.groups.filter(function(g){return g.lv===id}).forEach(function(g){delGroup(g.id)});S.systems.forEach(function(sy){sy.levels=sy.levels.filter(function(l){return l.id!==id})});delete S.prices[id]}
+
+document.addEventListener("click",function(e){
+var el=e.target.closest("[data-act]");if(!el)return;
+var a=el.dataset.act,id=el.dataset.id;
+if(a==="ov"&&e.target!==el)return;
+switch(a){
+case"lang":S.lang=S.lang==="fr"?"en":"fr";save();render();break;
+case"guide":case"prices":M={type:a};renderModal();break;
+case"sys":S.sys=id;S.lv="";save();render();break;
+case"lv":S.lv=id;save();render();break;
+case"addSys":M={type:"sys"};renderModal();break;
+case"renSys":M={type:"sys",id:S.sys};renderModal();break;
+case"delSys":if(S.systems.length>1)ask(t("confirmSys"),"delSys");break;
+case"addLvl":M={type:"lvl"};renderModal();break;
+case"renLvl":M={type:"lvl",id:S.lv};renderModal();break;
+case"delLvl":ask(t("confirmLvl"),"delLvl");break;
+case"todayBtn":DATE=iso(new Date());render();break;
+case"newGroup":M={type:"group"};renderModal();break;
+case"editGroup":M={type:"group",id:id};renderModal();break;
+case"delGroup":ask(t("confirmG"),"delGroup",id);break;
+case"editSt":M={type:"student",id:id};renderModal();break;
+case"delSt":ask(t("confirmS"),"delSt",id);break;
+case"hist":M={type:"hist",id:id};renderModal();break;
+case"mark":mark(id,el.dataset.d,el.dataset.v);break;
+case"pay":pay(id);break;
+case"save":case"quick":var fm=el.closest("[data-form]");if(fm)runForm(fm);break;
+case"doConfirm":var c=M;M=null;
+if(c&&c.act==="delGroup")delGroup(c.id);
+else if(c&&c.act==="delSt")delStudent(c.id);
+else if(c&&c.act==="delLvl"){delLevel(S.lv);S.lv=""}
+else if(c&&c.act==="delSys"&&S.systems.length>1){var sy=sys(S.sys);sy.levels.slice().forEach(function(l){delLevel(l.id)});S.systems=S.systems.filter(function(x){return x.id!==sy.id});S.lv=""}
+save();render();break;
+case"close":case"ov":closeModal();break}});
+function closeModal(){M=null;renderModal()}
+function ask(msg,act,id){M={type:"confirm",msg:msg,act:act,id:id};renderModal()}
+document.addEventListener("change",function(e){if(e.target.id==="dt"){DATE=e.target.value||iso(new Date());render()}});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&M){closeModal();return}
+if(e.key==="Enter"&&e.target.matches&&e.target.matches("input:not([type=checkbox])")){var f=e.target.closest("[data-form]");if(f){e.preventDefault();runForm(f)}}});
+
+function v(f,n){var x=f.querySelector('[name="'+n+'"]');return x?String(x.value):""}
+function submitForm(f){var k=f.dataset.form,n;
+if(k==="quick"){n=v(f,"qn").trim();if(!n){f.querySelector('[name=qn]').focus();return null}
+S.students.push({id:uid(),gid:f.dataset.gid,name:n,phone:v(f,"qp").trim(),enroll:iso(new Date()),paid:0,pays:[]});FOCUS=f.dataset.gid;return"ok"}
+if(!M)return null;
+if(k==="group"){n=v(f,"gn").trim();if(!n)return t("needName");
+var dy=Array.prototype.slice.call(f.querySelectorAll("input[name=dy]:checked")).map(function(x){return+x.value});
+if(M.id){var g=grp(M.id);g.name=n;g.days=dy}else{if(!S.lv)return t("noLevels");S.groups.push({id:uid(),name:n,days:dy,sys:S.sys,lv:S.lv})}return"ok"}
+if(k==="student"){n=v(f,"sn").trim();if(!n)return t("needName");var s=stu(M.id);if(!s)return"ok";s.name=n;s.phone=v(f,"sp").trim();s.enroll=v(f,"se")||s.enroll;return"ok"}
+if(k==="sys"){n=v(f,"xn").trim();if(!n)return t("needName");
+if(S.systems.some(function(x){return x.id!==M.id&&sname(x).toLowerCase()===n.toLowerCase()}))return t("dup");
+if(M.id)sys(M.id).name=n;else{var ns={id:"c"+uid(),flag:"🏫",name:n,levels:[]};S.systems.push(ns);S.sys=ns.id;S.lv=""}return"ok"}
+if(k==="lvl"){n=v(f,"ln").trim();if(!n)return t("needName");var cs=sys(S.sys),pv=Math.max(0,+v(f,"lp")||0);
+if(cs.levels.some(function(x){return x.id!==M.id&&x.name.toLowerCase()===n.toLowerCase()}))return t("dup");
+if(M.id){level(M.id).name=n;S.prices[M.id]=pv}else{var nl={id:"l"+uid(),name:n};cs.levels.push(nl);S.prices[nl.id]=pv;S.lv=nl.id}return"ok"}
+if(k==="prices"){S.systems.forEach(function(sy){sy.levels.forEach(function(l){S.prices[l.id]=Math.max(0,+v(f,"p_"+l.id)||0)})});return"ok"}
+return null}
+function showErr(f,m){var e=f.querySelector(".err");if(!e){e=document.createElement("div");e.className="err";var a=f.querySelector(".acts");f.insertBefore(e,a)}e.textContent=m}
+function runForm(f){var r;try{r=submitForm(f)}catch(err){r="Error: "+err.message}
+if(r==="ok"){M=null;save();render()}else if(r&&M)showErr(f,r)}
+
+function tick(){var n=new Date(),c=$("#clk"),d=$("#cdt");
+if(c)c.textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(function(x){return String(x).padStart(2,"0")}).join(":");
+if(d)d.textContent=n.toLocaleDateString(loc(),{weekday:"long",day:"numeric",month:"long"});
+var td=iso(n);if(td!==lastDay){if(DATE===lastDay)DATE=td;lastDay=td;if(!M)render()}}
+setInterval(tick,1000);
+render();
+})();
+</script>
+</body>
+</html>
